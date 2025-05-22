@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 text-center">
+        <div class="mt-5 mb-5">
+            <h1 class="display-4">403</h1>
+            <h2>Acceso denegado</h2>
+            <p class="lead">Lo sentimos, no tiene permisos para acceder a esta página.</p>
+            <a href="{{ url_for('main.index') }}" class="btn btn-primary mt-3">
+                <i class="fas fa-home me-2"></i> Volver a la página principal
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

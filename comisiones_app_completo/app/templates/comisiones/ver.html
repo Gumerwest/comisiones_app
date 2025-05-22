@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Inicio</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ comision.nombre }}</li>
+            </ol>
+        </nav>
+        
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h2>{{ comision.nombre }}</h2>
+                        <p class="text-muted">Creada el {{ comision.fecha_creacion.strftime('%d/%m/%Y') }}</p>
+                        <p>{{ comision.descripcion }}</p>
+                        
+                        {% if not current_user.is_anonymous %}
+                            <div class="mt-4">
+                                {% if es_miembro %}
+                                    <span class="badge bg-success mb-2">Es miembro de esta comisión</span>
+                                    {% if es_coordinador %}
+                                        <span class="badge bg-primary mb-2">Coordinador</span>
+                                    {% endif %}
+                                    <div>
+                                        <a href="{{ url_for('temas.crear_tema', comision_id=comision.id) }}" class="btn btn-primary">
+                                            <i class="fas fa-plus-circle"></i> Proponer Tema
+                                        </a>
+                                    </div>
+                                {% elif solicitud_pendiente %}
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-clock me-2"></i> Su solicitud de membresía está pendiente de aprobación.
+                                    </div>
+                                {% else %}
+                                    <a href="{{ url_for('comisiones.solicitar_membresia', id=comision.id) }}" class="btn btn-outline-primary">
+                                        <i class="fas fa-user-plus"></i> Solicitar Membresía
+                                    </a>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        {% if comision.imagen_path %}
+                            <img src="{{ url_for('static', filename='uploads/' + comision.imagen_path) }}" alt="{{ comision.nombre }}" class="img-fluid rounded">
+                        {% else %}
+                            <div class="bg-secondary text-white d-flex align-items-center justify-content-center rounded" style="height: 200px;">
+                                <i class="fas fa-ship fa-4x"></i>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="mt-3">
+                            <h5>Miembros: {{ miembros|length }}</h5>
+                            <a href="{{ url_for('comisiones.listar_miembros', id=comision.id) }}" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-users"></i> Ver Miembros
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {% if current_user.rol == 'admin' or es_coordinador %}
+                <div class="card-footer">
+                    <div class="d-flex justify-content-end">
+                        <a href="{{ url_for('comisiones.editar_comision', id=comision.id) }}" class="btn btn-sm btn-outline-primary me-2">
+                            <i class="fas fa-edit"></i> Editar
+                        </a>
+                        {% if current_user.rol == 'admin' %}
+                            <form action="{{ url_for('comisiones.eliminar_comision', id=comision.id) }}" method="post" class="d-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" data-confirm="¿Está seguro de que desea eliminar esta comisión?">
+                                    <i class="fas fa-trash"></i> Eliminar
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        
+        <h3 class="mb-3">Temas de la Comisión</h3>
+        
+        {% if es_miembro or current_user.rol == 'admin' %}
+            {% if temas %}
+                <div class="row">
+                    {% for tema in temas %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ tema.titulo }}</h5>
+                                    <p class="card-text">{{ tema.resumen|truncate(150) }}</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <span class="badge bg-primary">{{ tema.votos.count() }} votos</span>
+                                            <span class="badge bg-info">{{ tema.comentarios.count() }} comentarios</span>
+                                        </div>
+                                        <a href="{{ url_for('temas.ver_tema', id=tema.id) }}" class="btn btn-sm btn-outline-primary">Ver Tema</a>
+                                    </div>
+                                </div>
+                                <div class="card-footer text-muted">
+                                    <small>Propuesto por {{ tema.creador.nombre }} {{ tema.creador.apellidos }} el {{ tema.fecha_creacion.strftime('%d/%m/%Y') }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i> No hay temas aprobados en esta comisión.
+                    {% if es_miembro %}
+                        <a href="{{ url_for('temas.crear_tema', comision_id=comision.id) }}" class="alert-link">Proponga el primero</a>.
+                    {% endif %}
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="alert alert-warning">
+                <i class="fas fa-lock me-2"></i> Debe ser miembro de la comisión para ver los temas.
+                {% if not current_user.is_anonymous and not solicitud_pendiente %}
+                    <a href="{{ url_for('comisiones.solicitar_membresia', id=comision.id) }}" class="alert-link">Solicitar membresía</a>.
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

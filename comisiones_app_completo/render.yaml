@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: comisiones-app
+    runtime: python
+    buildCommand: pip install -r requirements.txt && flask db init && flask db migrate -m "initial migration" && flask db upgrade
+    startCommand: gunicorn "app:create_app()" --bind 0.0.0.0:$PORT
+    envVars:
+      - key: FLASK_APP
+        value: run.py
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+    plan: free
